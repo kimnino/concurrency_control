@@ -1,5 +1,7 @@
 package com.concurrency_control.reservation.service;
 
+import com.concurrency_control.lock.LockService;
+import com.concurrency_control.reservation.enums.Status;
 import com.concurrency_control.reservation.model.Reservation;
 import com.concurrency_control.reservation.model.Restaurant;
 import com.concurrency_control.reservation.repository.ReservationRepository;
@@ -20,26 +22,26 @@ public class ReservationService {
 
     private final ReservationRepository reservationRepository;
     private final RestaurantRepository restaurantRepository;
-    private final ConcurrentHashMap<Long, ReentrantLock> locks = new ConcurrentHashMap<>();
+    private final LockService lockService;
 
     @Transactional
     public void saveReservation(Reservation reservation) {
 
-        ReentrantLock lock = locks.computeIfAbsent(reservation.getRestaurant().getId(), k -> new ReentrantLock());
+        ReentrantLock lock = lockService.acquireLock("Restaurant_" + reservation.getRestaurant().getId());
 
-        lock.lock();
         try {
             Restaurant restaurant = restaurantRepository.getReferenceById(reservation.getRestaurant().getId());
-            List<Reservation> reservations = reservationRepository.findAllByRestaurantIdAndStatus(reservation.getRestaurant().getId(), reservation.getStatus());
 
-            if(restaurant.getTotalSlots() <= reservations.size()) {
-                log.info("해당 음식점에 예약요청을 할 수 없습니다.");
+            // PENDING 상태의 예약정보를 가져온다.
+            List<Reservation> reservations = reservationRepository.findAllByRestaurantIdAndStatus(reservation.getRestaurant().getId(), Status.PENDING);
+
+            if(restaurant.getTotalSlots() <= reservations.size()) { // 음식점 마다 예약접수를 최대로 받을 수 있는 카운트를 검사
                 throw new IllegalStateException("해당 음식점에 예약요청을 할 수 없습니다.");
             }
 
             reservationRepository.save(reservation);
         } finally {
-            lock.unlock();
+            lockService.releaseLock(lock);
         }
     }
 }
