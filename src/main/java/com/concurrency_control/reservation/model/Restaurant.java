@@ -18,5 +18,5 @@ public class Restaurant {
 
     private String name;
 
-    private int totalSlots; // 전체 예약 가능 슬롯 수
+    private int totalSlots; // 예약 요청 가능 슬롯 수
 }

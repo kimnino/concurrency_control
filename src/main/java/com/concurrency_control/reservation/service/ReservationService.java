@@ -36,9 +36,11 @@ public class ReservationService {
             List<Reservation> reservations = reservationRepository.findAllByRestaurantIdAndStatus(reservation.getRestaurant().getId(), Status.PENDING);
 
             if(restaurant.getTotalSlots() <= reservations.size()) { // 음식점 마다 예약접수를 최대로 받을 수 있는 카운트를 검사
+                log.info(reservation.getMemberName()+"님은 해당 음식점에 예약요청을 할 수 없습니다.");
                 throw new IllegalStateException("해당 음식점에 예약요청을 할 수 없습니다.");
             }
 
+            log.info(reservation.getMemberName()+"님은 예약 요청을 성공하셨습니다.");
             reservationRepository.save(reservation);
         } finally {
             lockService.releaseLock(lock);

@@ -65,15 +65,11 @@ public class ReservationServiceTest {
 
                 // 모든 스레드 실행
                 tasks.forEach(executorService::execute);
-
                 latch.await(); // 모든 스레드가 완료될 때까지 대기
 
                 // 성공 횟수 확인 (2개의 예약만 성공해야 함)
                 assertEquals(2, successCount.get());
-
                 // 실패 횟수 확인 (8개의 예약은 실패해야 함)
                 assertEquals(8, failureCount.get());
-
-
     }
 }
